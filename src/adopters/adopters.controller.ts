@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AdoptersService } from './adopters.service';
 
 import { RegisterAdopterDto } from './dto/register-adopter.dto';
@@ -14,6 +14,7 @@ export class AdoptersController {
     constructor(private readonly adoptersService: AdoptersService) {}
 
     @Post('register')
+    @UsePipes(new ValidationPipe({ transform: true, whitelist: true })) 
     register(@Body() dto: RegisterAdopterDto): object {
         return this.adoptersService.register(dto);
     }
