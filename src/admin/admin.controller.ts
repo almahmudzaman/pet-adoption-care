@@ -1,81 +1,90 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Put, Delete, Body, Param, Query, ParseIntPipe, ParseUUIDPipe, DefaultValuePipe, ParseEnumPipe, ValidationPipe } from '@nestjs/common';
+import { AdminLoginDto, UpdateUserDto, UpdateUserStatusDto, UserFilterQueryDto, PetFilterQueryDto, PaymentFilterQueryDto, AnalyticsQueryDto, UpdateUserProfileDto } from './admin.dto';
 import { AdminService } from './admin.service';
-import {
-  AdminLoginDto,
-  UserQueryDto,
-  UpdateUserDto,
-  UpdateUserStatusDto,
-  PetModerationQueryDto,
-  PaymentReportQueryDto,
-} from './admin.dto';
 
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // Route 1: POST /admin/login
+  // Route 1: Admin Login - POST /admin/login
   @Post('login')
-  adminLogin(@Body() body: any) {
-    try {
-      if (!body || !body.email || !body.password) {
-        return { success: false, message: 'Email and password are required' };
-      }
-      return this.adminService.adminLogin(body.email, body.password);
-    } catch (error) {
-      return { success: false, message: 'Login error', error: error.message };
-    }
+  login(@Body(new ValidationPipe()) dto: AdminLoginDto): object {
+    return this.adminService.adminLogin(dto.email, dto.password);
   }
 
-  // Route 2: GET /admin/users
+  // Route 2: Get All Users - GET /admin/users
   @Get('users')
-  getAllUsers(@Query() query: UserQueryDto) {
-    return this.adminService.getAllUsers(query.role, query.status, query.limit, query.offset);
+  getAllUsers(
+    @Query('role') role?: string,
+    @Query('status') status?: string
+  ): object {
+    const query = { role, status };
+    return this.adminService.getAllUsers(query);
   }
 
-  // Route 3: GET /admin/users/:userId
+  // Route 3: Get Single User - GET /admin/users/:userId
   @Get('users/:userId')
-  getUser(@Param('userId') userId: string) {
-    return this.adminService.getUserById(userId);
+  getUser(@Param('userId', ParseUUIDPipe) userId: string): object {
+    return this.adminService.getUser(userId);
   }
 
-  // Route 4: PUT /admin/users/:userId (full update)
+  // Route 4: Full Update User - PUT /admin/users/:userId
   @Put('users/:userId')
-  updateUser(@Param('userId') userId: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.adminService.updateUser(userId, updateUserDto);
+  updateUser(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserDto): object {
+    return this.adminService.updateUser(userId, dto);
   }
 
-  // Route 5: PATCH /admin/users/:userId/status
+  // Route 5: Update User Status - PATCH /admin/users/:userId/status
   @Patch('users/:userId/status')
-  updateUserStatus(@Param('userId') userId: string, @Body() updateUserStatusDto: UpdateUserStatusDto) {
-    return this.adminService.updateUserStatus(userId, updateUserStatusDto);
+  updateStatus(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserStatusDto): object {
+    return this.adminService.updateUserStatus(userId, dto);
   }
 
-  // Route 7: GET /admin/pets
+  // Route 6: Delete User - DELETE /admin/users/:userId
+  @Delete('users/:userId')
+  deleteUser(@Param('userId', ParseUUIDPipe) userId: string): object {
+    return this.adminService.deleteUser(userId);
+  }
+
+  // Route 7: Update User Profile with Social Media Links - PUT /admin/users/:userId/profile
+  @Put('users/:userId/profile')
+  updateUserProfile(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserProfileDto): object {
+    return this.adminService.updateUserProfile(userId, dto);
+  }
+
+  // Route 8: Get Pets - GET /admin/pets
   @Get('pets')
-  getPets(@Query() query: PetModerationQueryDto) {
-    return this.adminService.getPets(query.status, query.reported, query.limit, query.offset);
+  getPets(
+    @Query('status') status?: string,
+    @Query('breed') breed?: string,
+  ): object {
+    const query = { status, breed };
+    return this.adminService.getPets(query);
   }
 
-  // Route 8: DELETE /admin/pets/:petId
+  // Route 9: Delete Pet - DELETE /admin/pets/:petId
   @Delete('pets/:petId')
-  deletePet(@Param('petId') petId: string) {
+  deletePet(@Param('petId', ParseUUIDPipe) petId: string): object {
     return this.adminService.deletePet(petId);
   }
-  // Route 9: GET /admin/payments
+
+  // Route 10: Get Payments - GET /admin/payments
   @Get('payments')
-  getPayments(@Query() query: PaymentReportQueryDto) {
-    return this.adminService.getPayments(query.startDate, query.endDate, query.limit, query.offset);
+  getPayments(
+    @Query('status') status?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ): object {
+    const query = { status, startDate, endDate };
+    return this.adminService.getPayments(query);
   }
 
-  // Route 10: GET /admin/analytics
+  // Route 11: Get Dashboard Analytics - GET /admin/analytics
   @Get('analytics')
-  getDashboardAnalytics() {
-    return this.adminService.getDashboardAnalytics();
-  }
-
-  // Route 6: DELETE /admin/users/:userId
-  @Delete('users/:userId')
-  deleteUser(@Param('userId') userId: string) {
-    return this.adminService.deleteUser(userId);
+  getAnalytics(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string): object {
+    const query = { startDate, endDate};
+    return this.adminService.getDashboardAnalytics(query);
   }
 }
