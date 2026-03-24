@@ -1,71 +1,141 @@
-// Admin Login DTO
+import { 
+  IsEmail, 
+  IsString, 
+  Matches, 
+  IsDateString, 
+  IsUrl, 
+  IsDefined, 
+  IsNotEmpty, 
+  IsEnum 
+} from 'class-validator';
+
+enum UserStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  INACTIVE = 'inactive',
+}
+
+
 export class AdminLoginDto {
+  @IsDefined({ message: 'Email is required' })
+  @IsNotEmpty({ message: 'Email cannot be empty' })
+  @IsEmail()
   email: string;
+
+  @IsDefined({ message: 'Password is required' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
+  @IsString()
+  @Matches(/[@#$&]/, {
+    message: 'Password must contain at least one special character: @ # $ &',
+  })
   password: string;
-
-  constructor(partial?: Partial<AdminLoginDto>) {
-    this.email = partial?.email || '';
-    this.password = partial?.password || '';
-  }
 }
 
-// User Query DTO
-export class UserQueryDto {
+export class UpdateUserDto {
+  
+  @IsString()
+  @Matches(/^[a-zA-Z\s]*$/, {
+    message: 'Name field should not contain any numbers',
+  })
+  name?: string;
+
+  
+  @IsNotEmpty({ message: 'Email cannot be empty' })
+  @IsEmail()
+  email?: string;
+
+  
+  @IsString()
   role?: string;
+
+  
+  @IsString()
   status?: string;
-  limit?: number;
-  offset?: number;
 }
 
-// Update User Status DTO
 export class UpdateUserStatusDto {
+  @IsDefined({ message: 'Status is required' })
+  @IsNotEmpty({ message: 'Status cannot be empty' })
+  @IsEnum(UserStatus)
   status: 'active' | 'suspended' | 'inactive';
+
+  
+  @IsString()
   reason?: string;
 }
 
-// Full User update DTO (used by PUT /admin/users/:userId)
-export class UpdateUserDto {
-  name?: string;
-  email?: string;
+export class UserFilterQueryDto {
+  
+  @IsString()
   role?: string;
-  status?: 'active' | 'suspended' | 'inactive';
-}
-// Pet Moderation Query DTO
-export class PetModerationQueryDto {
+
+  
+  @IsString()
   status?: string;
-  reported?: boolean;
-  limit?: number;
-  offset?: number;
 }
 
-// Admin Application Query DTO
-export class AdminApplicationQueryDto {
+export class PetFilterQueryDto {
+  
+  @IsString()
   status?: string;
-  petId?: string;
-  limit?: number;
-  offset?: number;
+
+  
+  @IsString()
+  breed?: string;
 }
 
-// Payment Report Query DTO
-export class PaymentReportQueryDto {
+export class PaymentFilterQueryDto {
+  
+  @IsString()
+  status?: string;
+
+  
+  @IsDateString()
   startDate?: string;
+
+  
+  @IsDateString()
   endDate?: string;
-  limit?: number;
-  offset?: number;
+
 }
 
-// Consultation Report Query DTO
-export class ConsultationReportQueryDto {
-  vetId?: string;
-  status?: string;
-  limit?: number;
-  offset?: number;
+export class AnalyticsQueryDto {
+  
+  @IsDateString()
+  startDate?: string;
+
+  
+  @IsDateString()
+  endDate?: string;
+
 }
 
-// Review Moderation Query DTO
-export class ReviewModerationQueryDto {
-  rating?: number;
-  reported?: boolean;
-  limit?: number;
-  offset?: number;
+export class UpdateUserProfileDto {
+  
+  @IsNotEmpty({ message: 'Name cannot be empty' })
+  @IsString()
+  @Matches(/^[a-zA-Z\s]*$/, {
+    message: 'Name field should not contain any numbers',
+  })
+  name?: string;
+
+  
+  @IsNotEmpty({ message: 'Facebook URL cannot be empty' })
+  @IsUrl()
+  facebookUrl?: string;
+
+  
+  @IsNotEmpty({ message: 'Twitter URL cannot be empty' })
+  @IsUrl()
+  twitterUrl?: string;
+
+  
+  @IsNotEmpty({ message: 'Instagram URL cannot be empty' })
+  @IsUrl()
+  instagramUrl?: string;
+
+  
+  @IsNotEmpty({ message: 'LinkedIn URL cannot be empty' })
+  @IsUrl()
+  linkedinUrl?: string;
 }

@@ -10,10 +10,19 @@ import { CreateArticleDto } from './dto/create-article.dto';
 
 @Injectable()
 export class VetsService {
-  register(dto: RegisterVetDto): object {
+  register(dto: RegisterVetDto, nidImage: Express.Multer.File): object {
+   
     return {
       message: 'Vet registered successfully',
-      data: { id: 5001, name: dto.name, email: dto.email, clinicName: dto.clinicName },
+      data: {
+        id: 5001,
+        name: dto.name,
+        email: dto.email,
+        clinicName: dto.clinicName,
+        nidNumber: dto.nidNumber,
+        nidImageName: nidImage.originalname,
+        nidImageSize: nidImage.size,
+      },
     };
   }
 
@@ -22,9 +31,9 @@ export class VetsService {
       message: 'Vet profile',
       data: {
         id: 5001,
-        name: 'Dr. Sample Vet',
-        email: 'vet@example.com',
-        clinicName: 'Sample Animal Care',
+        name: 'Dr. Sajid Vet',
+        email: 'vet@gmail.com.com',
+        clinicName: 'SAJID Animal Care',
         phone: '01XXXXXXXXX',
         specialization: 'General',
       },
