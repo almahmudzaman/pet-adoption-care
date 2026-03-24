@@ -6,13 +6,13 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // Route 1: Admin Login - POST /admin/login
+  //Admin Login - POST /admin/login
   @Post('login')
-  login(@Body(new ValidationPipe()) dto: AdminLoginDto): object {
+  login(@Body(ValidationPipe) dto: AdminLoginDto): object {
     return this.adminService.adminLogin(dto.email, dto.password);
   }
 
-  // Route 2: Get All Users - GET /admin/users
+  //All Users - GET /admin/users
   @Get('users')
   getAllUsers(
     @Query('role') role?: string,
@@ -22,37 +22,37 @@ export class AdminController {
     return this.adminService.getAllUsers(query);
   }
 
-  // Route 3: Get Single User - GET /admin/users/:userId
+  //Get Single User - GET /admin/users/:userId
   @Get('users/:userId')
   getUser(@Param('userId', ParseUUIDPipe) userId: string): object {
     return this.adminService.getUser(userId);
   }
 
-  // Route 4: Full Update User - PUT /admin/users/:userId
+  //Full Update User - PUT /admin/users/:userId
   @Put('users/:userId')
-  updateUser(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserDto): object {
+  updateUser(@Param('userId', ParseUUIDPipe) userId: string, @Body(ValidationPipe) dto: UpdateUserDto): object {
     return this.adminService.updateUser(userId, dto);
   }
 
-  // Route 5: Update User Status - PATCH /admin/users/:userId/status
+  //Update User Status - PATCH /admin/users/:userId/status
   @Patch('users/:userId/status')
-  updateStatus(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserStatusDto): object {
+  updateStatus(@Param('userId', ParseUUIDPipe) userId: string, @Body(ValidationPipe) dto: UpdateUserStatusDto): object {
     return this.adminService.updateUserStatus(userId, dto);
   }
 
-  // Route 6: Delete User - DELETE /admin/users/:userId
+  //Delete User - DELETE /admin/users/:userId
   @Delete('users/:userId')
   deleteUser(@Param('userId', ParseUUIDPipe) userId: string): object {
     return this.adminService.deleteUser(userId);
   }
 
-  // Route 7: Update User Profile with Social Media Links - PUT /admin/users/:userId/profile
+  //Update User Profile with Social Media Links - PUT /admin/users/:userId/profile
   @Put('users/:userId/profile')
-  updateUserProfile(@Param('userId', ParseUUIDPipe) userId: string, @Body(new ValidationPipe()) dto: UpdateUserProfileDto): object {
+  updateUserProfile(@Param('userId', ParseUUIDPipe) userId: string, @Body(ValidationPipe) dto: UpdateUserProfileDto): object {
     return this.adminService.updateUserProfile(userId, dto);
   }
 
-  // Route 8: Get Pets - GET /admin/pets
+  // Get Pets - GET /admin/pets
   @Get('pets')
   getPets(
     @Query('status') status?: string,

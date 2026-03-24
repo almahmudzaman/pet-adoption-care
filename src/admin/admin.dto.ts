@@ -3,14 +3,9 @@ import {
   IsString, 
   Matches, 
   IsDateString, 
-  IsOptional, 
   IsUrl, 
-  IsIn, 
   IsDefined, 
   IsNotEmpty, 
-  IsNumber, 
-  IsInt, 
-  IsPositive, 
   IsEnum 
 } from 'class-validator';
 
