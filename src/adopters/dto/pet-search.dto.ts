@@ -1,9 +1,27 @@
+import { IsOptional, IsString, IsNumber } from 'class-validator';
+
 export class PetSearchDto {
-  breed: string;
-  ageMin: number;
-  ageMax: number;
-  location: string;
-  sort: string;
-  page: number;
-  limit: number;
+    @IsOptional()
+    @IsString()
+    breed?: string;
+
+    @IsOptional()
+    @IsNumber()
+    ageMin?: number;
+
+    @IsOptional()
+    @IsNumber()
+    ageMax?: number;
+
+    @IsOptional()
+    @IsString()
+    location?: string;
+
+    @IsOptional()
+    @IsNumber()
+    page?: number;
+
+    @IsOptional()
+    @IsNumber()
+    limit?: number;
 }

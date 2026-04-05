@@ -22,7 +22,7 @@ import { UpdatePetDto } from './dto/update-pet.dto';
 import { PetFilterQueryDto } from './dto/pet-filter-query.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 import { PaymentHistoryQueryDto } from './dto/payment-history-query.dto';
-import { Response } from 'express';
+import type { Response } from 'express';
  
 @Controller('sellers')
 export class SellersController {

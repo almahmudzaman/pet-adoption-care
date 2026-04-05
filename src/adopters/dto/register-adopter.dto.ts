@@ -1,20 +1,26 @@
-// src/adopters/dto/register-adopter.dto.ts
+/*User Category 2: 
+• Email Address field is required, and the input must contain aiub.edu 
+domain 
+• Password field must be at least 6 character long and it must contain one 
+Uppercase character  
+• Validate gender given male or female. 
+• Phone Number field must contain only numbers */
 
 import { IsString, IsEmail, MinLength, Matches, IsEnum, IsOptional } from 'class-validator';
 
 export class RegisterAdopterDto {
   @IsString()
   @Matches(/^[A-Za-z\s]+$/, { message: 'Name should contain only alphabets and spaces' })
-  name: string;
+  name!: string;
 
   @IsEmail({}, { message: 'Invalid email format' })
   @Matches(/@aiub\.edu$/, { message: 'Email must end with @aiub.edu' })
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
   @Matches(/[A-Z]/, { message: 'Password must contain at least one uppercase letter' })
-  password: string;
+  password!: string;
 
   @IsOptional()
   @IsEnum(['male', 'female'], { message: 'Gender must be male or female' })

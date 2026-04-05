@@ -1,84 +1,194 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable, HttpException, HttpStatus,
+  NotFoundException, BadRequestException
+} from '@nestjs/common';
 
-import { RegisterAdopterDto } from './dto/register-adopter.dto';
-import { PetSearchDto } from './dto/pet-search.dto';
-import { CreateApplicationDto } from './dto/create-application.dto';
-import { ApplicationStatusQueryDto } from './dto/application-status-query.dto';
-import { UpdateProfileDto } from './dto/update-profile.dto';
-import { UpdateApplicationDto } from './dto/update-application.dto';
-import { BookConsultationDto  } from './dto/book-consultation.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
+
+import { User } from '../common/entities/user.entity';
+import { Pet } from '../common/entities/pet.entity';
+import { AdoptionApplication } from '../common/entities/adoption-application.entity';
+import { Favorite } from '../common/entities/favorite.entity';
+
 @Injectable()
 export class AdoptersService {
+  constructor(
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Pet) private petRepo: Repository<Pet>,
+    @InjectRepository(AdoptionApplication) private appRepo: Repository<AdoptionApplication>,
+    @InjectRepository(Favorite) private favoriteRepo: Repository<Favorite>,
+    private jwtService: JwtService,
+  ) {}
 
-    register(dto: RegisterAdopterDto): object {
-        return {
-            message: 'Adopter registered successfully',
-            data: { id: 1001, name: dto.name, email: dto.email }
-        };
+  // 0. Login
+  async login(dto: any) {
+    const user = await this.userRepo.findOneBy({ email: dto.email });
+
+    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+      throw new HttpException('Invalid email or password', HttpStatus.UNAUTHORIZED);
     }
 
-    findPets(dto: PetSearchDto): object {
-        return {
-            message: 'Pets list',
-            data: { pets: [], total: 25, page: dto.page || 1 }
-        };
+    const payload = { id: user.userId, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload);
+
+    return {
+      success: true,
+      message: 'Login successful',
+      data: { token }
+    };
+  }
+
+  // 1. Register
+  async register(dto: any) {
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = this.userRepo.create({
+      ...dto,
+      password: hashedPassword,
+      role: 'ADOPTER'
+    });
+
+    return {
+      success: true,
+      message: 'Registered',
+      data: await this.userRepo.save(user)
+    };
+  }
+
+  // 2. Search pets
+  async findPets(dto: any) {
+    const pets = await this.petRepo.find();
+    return { success: true, data: pets };
+  }
+
+  // 3. Single pet
+  async findOnePet(petId: string) {
+    const pet = await this.petRepo.findOneBy({ petId: parseInt(petId) });
+    if (!pet) throw new NotFoundException('Pet not found');
+
+    return { success: true, data: pet };
+  }
+
+  // 4. Create application
+  async createApplication(dto: any, adopterId: number) {
+    const adopter = await this.userRepo.findOneBy({ userId: adopterId });
+    const pet = await this.petRepo.findOneBy({ petId: dto.petId });
+
+    if (!adopter) throw new NotFoundException('Adopter not found');
+    if (!pet) throw new NotFoundException('Pet not found');
+
+    // prevent duplicate
+    const exists = await this.appRepo.findOne({
+      where: { adopter: { userId: adopterId }, pet: { petId: dto.petId } }
+    });
+
+    if (exists) throw new BadRequestException('Already applied');
+
+    const app = this.appRepo.create({
+      message: dto.message,
+      adopter,
+      pet,
+      status: 'PENDING'
+    });
+
+    return {
+      success: true,
+      data: await this.appRepo.save(app)
+    };
+  }
+
+  // 5. Get my applications
+  async getMyApplications(dto: any, adopterId: number) {
+    const apps = await this.appRepo.find({
+      where: {
+        adopter: { userId: adopterId },
+        status: dto.status || undefined
+      },
+      relations: ['pet']
+    });
+
+    return { success: true, data: apps };
+  }
+
+  // 6. Update profile
+  async updateProfile(dto: any, userId: number) {
+    const user = await this.userRepo.findOneBy({ userId });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.userRepo.update(userId, dto);
+
+    return { success: true, message: 'Profile updated' };
+  }
+
+  // 7. Update application
+  async updateApplication(applicationId: string, dto: any, userId: number) {
+    const app = await this.appRepo.findOne({
+      where: { id: parseInt(applicationId) },
+      relations: ['adopter']
+    });
+
+    if (!app || app.adopter.userId !== userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    findOnePet(petId: string): object {
-        return {
-            message: 'Pet details',
-            data: { id: petId, name: 'Buddy', breed: 'Labrador' }
-        };
+    await this.appRepo.update(applicationId, dto);
+
+    return { success: true, message: 'Updated' };
+  }
+
+  // 8. Cancel application
+  async cancelApplication(applicationId: string, userId: number) {
+    const app = await this.appRepo.findOne({
+      where: { id: parseInt(applicationId) },
+      relations: ['adopter']
+    });
+
+    if (!app || app.adopter.userId !== userId) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
-    createApplication(dto: CreateApplicationDto): object {
-        return {
-            message: 'Application created',
-            data: { id: 2001, petId: dto.petId, status: 'PENDING' }
-        };
-    }
+    await this.appRepo.delete(applicationId);
 
-    getMyApplications(dto: ApplicationStatusQueryDto): object {
-        return {
-            message: 'Your applications',
-            data: { applications: [], total: 5 }
-        };
-    }
+    return { success: true, message: 'Deleted' };
+  }
 
-    updateProfile(dto: UpdateProfileDto): object {
-        return {
-            message: 'Profile updated',
-            data: dto
-        };
-    }
+  // 9. Add favorite
+  async addToFavorites(dto: any, userId: number) {
+    const user = await this.userRepo.findOneBy({ userId });
+    const pet = await this.petRepo.findOneBy({ petId: dto.petId });
 
-    updateApplication(applicationId: string, dto: UpdateApplicationDto): object {
-        return {
-            message: 'Application updated',
-            data: { id: applicationId, ...dto }
-        };
-    }
+    if (!user) throw new NotFoundException('User not found');
+    if (!pet) throw new NotFoundException('Pet not found');
 
-    cancelApplication(applicationId: string): object {
-        return {
+    const favorite = this.favoriteRepo.create({ adopter: user, pet });
+    return { success: true, data: await this.favoriteRepo.save(favorite) };
+  }
 
-            message: 'Application cancelled',
-            data: { id: applicationId }
-        };
-    }
+  // 10. Remove favorite
+  async removeFavorite(petId: string, userId: number) {
+    await this.favoriteRepo.delete({
+      adopter: { userId },
+      pet: { petId: parseInt(petId) }
+    });
 
-    bookConsultation(dto: BookConsultationDto): object {
-        return {
+    return { success: true, message: 'Removed' };
+  }
 
-            message: 'Consultation booked',
-            data: { id: 3001, vetId: dto.vetId }
-        };
-    }
+  // 11. Get favorites
+  async getMyFavorites(userId: number) {
+    const favorites = await this.favoriteRepo.find({
+      where: { adopter: { userId } },
+      relations: ['pet']
+    });
 
-    removeFavorite(petId: string): object {
-        return {
-            message: 'Removed from favorites',
-            data: { petId }
-        };
-    }
+    return { success: true, data: favorites };
+  }
+
+  // 12. Consultation (dummy)
+  async bookConsultation(dto: any) {
+    return { success: true, data: dto };
+  }
 }

@@ -1,6 +1,14 @@
+import { IsOptional, IsString } from 'class-validator';
+
 export class UpdateApplicationDto {
-  message: string;
-  homeType: string;
-  answers: string;
-  }
- 
+    @IsOptional()
+    @IsString()
+    message?: string;
+
+    @IsOptional()
+    @IsString()
+    homeType?: string;
+
+    @IsOptional()
+    answers?: any[];
+}
