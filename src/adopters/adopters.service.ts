@@ -12,6 +12,7 @@ import { User } from '../common/entities/user.entity';
 import { Pet } from '../common/entities/pet.entity';
 import { AdoptionApplication } from '../common/entities/adoption-application.entity';
 import { Favorite } from '../common/entities/favorite.entity';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class AdoptersService {
@@ -21,6 +22,9 @@ export class AdoptersService {
     @InjectRepository(AdoptionApplication) private appRepo: Repository<AdoptionApplication>,
     @InjectRepository(Favorite) private favoriteRepo: Repository<Favorite>,
     private jwtService: JwtService,
+    
+    private mailerService: MailerService,
+
   ) {}
 
   // 0. Login
@@ -114,15 +118,56 @@ export class AdoptersService {
   }
 
   // 6. Update profile
-  async updateProfile(dto: any, userId: number) {
-    const user = await this.userRepo.findOneBy({ userId });
-    if (!user) throw new NotFoundException('User not found');
+async updateProfile(dto: any, userId: number) {
+  // a. Get existing user
+  const user = await this.userRepo.findOneBy({ userId });
 
-    await this.userRepo.update(userId, dto);
-
-    return { success: true, message: 'Profile updated' };
+  if (!user) {
+    throw new NotFoundException('User not found');
   }
 
+  // b. Detect changes
+  const changes: string[] = [];
+
+  if (dto.name && dto.name !== user.name) {
+    changes.push(`Name: "${user.name}" → "${dto.name}"`);
+  }
+
+  if (dto.phone && dto.phone !== user.phone) {
+    changes.push(`Phone: "${user.phone}" → "${dto.phone}"`);
+  }
+
+  if (dto.address && dto.address !== user.address) {
+    changes.push(`Address updated`);
+  }
+
+  // c. Update database
+  await this.userRepo.update(userId, {
+    name: dto.name ?? user.name,
+    phone: dto.phone ?? user.phone,
+    address: dto.address ?? user.address
+  });
+
+  // d. Send email ONLY if changes exist
+  if (changes.length > 0) {
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Profile Updated',
+      text: `Hello ${user.name},
+
+The following changes were made to your profile:
+
+${changes.join('\n')}
+
+If this wasn't you, please contact support.`
+    });
+  }
+
+  return {
+    success: true,
+    message: 'Profile updated successfully'
+  };
+}
   // 7. Update application
   async updateApplication(applicationId: string, dto: any, userId: number) {
     const app = await this.appRepo.findOne({

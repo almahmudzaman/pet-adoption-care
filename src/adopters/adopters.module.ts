@@ -1,3 +1,4 @@
+import { MailerModule } from '@nestjs-modules/mailer';
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -15,6 +16,20 @@ import { Favorite } from '../common/entities/favorite.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Pet, AdoptionApplication, Favorite]),
+
+    // Mailer Configuration
+    MailerModule.forRoot({
+      transport: {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: 'souravzaman10@gmail.com',
+          pass: 'wpvl xcve zqnk apdo'
+
+        },
+      },
+    }),
 
     // Register the JWT module to enable authentication for adopters.
     // The secret should be managed securely using environment variables (e.g., process.env.JWT_SECRET).

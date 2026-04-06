@@ -14,7 +14,7 @@ export class RegisterAdopterDto {
   name!: string;
 
   @IsEmail({}, { message: 'Invalid email format' })
-  @Matches(/@aiub\.edu$/, { message: 'Email must end with @aiub.edu' })
+  @Matches(/@(student\.)?aiub\.edu$/, { message: 'Email must end with @aiub.edu' })
   email!: string;
 
   @IsString()
