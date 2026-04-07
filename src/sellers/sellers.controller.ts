@@ -13,6 +13,7 @@ import {
   Res,
   ParseIntPipe,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MulterError, diskStorage } from 'multer';
@@ -72,10 +73,10 @@ export class SellersController {
  
   @Post('pets')
   @UseGuards(JwtAuthGuard)
-  createPet(@Body() createPetDto: CreatePetDto) {
-    return this.sellersService.createPet(createPetDto);
+  createPet(@Request() req: any, @Body() createPetDto: CreatePetDto) {
+    return this.sellersService.createPet(createPetDto, req.user.id);
   }
- 
+
   @Get('pets')
   @UseGuards(JwtAuthGuard)
   getMyPets(@Query() filterQuery: PetFilterQueryDto) {
