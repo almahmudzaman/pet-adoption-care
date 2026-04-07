@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
 import { RegisterSellerDto } from './dto/register-seller.dto';
+import { LoginSellerDto } from './dto/login-seller.dto';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
 import { PetFilterQueryDto } from './dto/pet-filter-query.dto';
@@ -13,16 +16,44 @@ export class SellersService {
   private applications: any[] = [];
   private payments: any[] = [];
 
-  constructor() {}
+  constructor(private jwtService: JwtService) {}
 
-  register(registerSellerDto: RegisterSellerDto) {
+  async register(registerSellerDto: RegisterSellerDto) {
+    // Check if seller already exists
+    const existingSeller = this.sellers.find(s => s.email === registerSellerDto.email);
+    if (existingSeller) {
+      throw new HttpException('Seller with this email already exists', HttpStatus.BAD_REQUEST);
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(registerSellerDto.password, 10);
+
     const newSeller = {
       id: this.sellers.length + 1,
       ...registerSellerDto,
+      password: hashedPassword,
+      role: 'seller',
       createdAt: new Date(),
     };
     this.sellers.push(newSeller);
-    return { message: 'Seller registered successfully', seller: newSeller };
+    return { message: 'Seller registered successfully', seller: { ...newSeller, password: undefined } };
+  }
+
+  async login(loginSellerDto: LoginSellerDto) {
+    const seller = this.sellers.find(s => s.email === loginSellerDto.email);
+    if (!seller) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Compare password
+    const isPasswordValid = await bcrypt.compare(loginSellerDto.password, seller.password);
+    if (!isPasswordValid) {
+      throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+    }
+
+    const payload = { id: seller.id, email: seller.email, role: seller.role };
+    const token = this.jwtService.sign(payload);
+    return { message: 'Login successful', token };
   }
 
   createPet(createPetDto: CreatePetDto) {
@@ -68,7 +99,7 @@ export class SellersService {
   viewPet(petId: number) {
     const pet = this.pets.find((p) => p.id === petId);
     if (!pet) {
-      return { message: 'Pet not found', statusCode: 404 };
+      throw new HttpException('Pet not found', HttpStatus.NOT_FOUND);
     }
     return pet;
   }
@@ -76,7 +107,7 @@ export class SellersService {
   updatePet(petId: number, updatePetDto: UpdatePetDto) {
     const pet = this.pets.find((p) => p.id === petId);
     if (!pet) {
-      return { message: 'Pet not found', statusCode: 404 };
+      throw new HttpException('Pet not found', HttpStatus.NOT_FOUND);
     }
     Object.assign(pet, updatePetDto);
     return { message: 'Pet updated successfully', pet };
@@ -85,7 +116,7 @@ export class SellersService {
   updatePetStatus(petId: number, status: 'available' | 'adopted') {
     const pet = this.pets.find((p) => p.id === petId);
     if (!pet) {
-      return { message: 'Pet not found', statusCode: 404 };
+      throw new HttpException('Pet not found', HttpStatus.NOT_FOUND);
     }
     pet.status = status;
     pet.updatedAt = new Date();
@@ -95,7 +126,7 @@ export class SellersService {
   deletePet(petId: number) {
     const index = this.pets.findIndex((p) => p.id === petId);
     if (index === -1) {
-      return { message: 'Pet not found', statusCode: 404 };
+      throw new HttpException('Pet not found', HttpStatus.NOT_FOUND);
     }
     this.pets.splice(index, 1);
     return { message: 'Pet deleted successfully' };
@@ -120,7 +151,7 @@ export class SellersService {
   ) {
     const application = this.applications.find((a) => a.id === applicationId);
     if (!application) {
-      return { message: 'Application not found', statusCode: 404 };
+      throw new HttpException('Application not found', HttpStatus.NOT_FOUND);
     }
     application.status = updateApplicationStatusDto.status;
     application.reason = updateApplicationStatusDto.reason;
