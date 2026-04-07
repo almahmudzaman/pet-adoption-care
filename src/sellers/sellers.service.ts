@@ -1,5 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcryptjs';
 import { RegisterSellerDto } from './dto/register-seller.dto';
 import { LoginSellerDto } from './dto/login-seller.dto';
@@ -16,7 +17,7 @@ export class SellersService {
   private applications: any[] = [];
   private payments: any[] = [];
 
-  constructor(private jwtService: JwtService) {}
+  constructor(private jwtService: JwtService, private mailerService: MailerService) {}
 
   async register(registerSellerDto: RegisterSellerDto) {
     // Check if seller already exists
@@ -36,6 +37,23 @@ export class SellersService {
       createdAt: new Date(),
     };
     this.sellers.push(newSeller);
+
+    // Send welcome email
+    try {
+      await this.mailerService.sendMail({
+        to: newSeller.email,
+        subject: 'Welcome to Pet Adoption Care - Seller Registration',
+        template: 'welcome-seller', // You can create a template
+        context: {
+          name: newSeller.name,
+          email: newSeller.email,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't throw error, registration is successful
+    }
+
     return { message: 'Seller registered successfully', seller: { ...newSeller, password: undefined } };
   }
 
@@ -156,6 +174,27 @@ export class SellersService {
     application.status = updateApplicationStatusDto.status;
     application.reason = updateApplicationStatusDto.reason;
     application.updatedAt = new Date();
+
+    // Send notification email to seller
+    const seller = this.sellers.find(s => s.id === application.sellerId); // Assuming application has sellerId
+    if (seller) {
+      try {
+        await this.mailerService.sendMail({
+          to: seller.email,
+          subject: 'Application Status Updated',
+          html: `
+            <h1>Application Status Update</h1>
+            <p>Dear ${seller.name},</p>
+            <p>The status of application #${applicationId} has been updated to: <strong>${application.status}</strong></p>
+            ${application.reason ? `<p>Reason: ${application.reason}</p>` : ''}
+            <p>Thank you for using Pet Adoption Care.</p>
+          `,
+        });
+      } catch (error) {
+        console.error('Failed to send status update email:', error);
+      }
+    }
+
     return { message: 'Application status updated', application };
   }
 
