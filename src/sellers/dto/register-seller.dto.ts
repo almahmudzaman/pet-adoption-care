@@ -18,5 +18,5 @@ export class RegisterSellerDto {
   @Matches(/^01[0-9]{9}$/, {
     message: 'Phone number must start with 01 and be 11 digits long',
   })
-  phoneNumber: string;
+  phone: string;
 }
