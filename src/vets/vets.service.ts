@@ -1,5 +1,6 @@
 
 import { Injectable } from '@nestjs/common';
+import type { Express } from 'express';
 
 import { RegisterVetDto } from './dto/register-vet.dto';
 import { UpdateVetProfileDto } from './dto/update-vet-profile.dto';

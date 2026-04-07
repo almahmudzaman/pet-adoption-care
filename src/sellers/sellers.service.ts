@@ -74,10 +74,11 @@ export class SellersService {
     return { message: 'Login successful', token };
   }
 
-  createPet(createPetDto: CreatePetDto) {
+  createPet(createPetDto: CreatePetDto, sellerId?: number) {
     const newPet = {
       id: this.pets.length + 1,
       ...createPetDto,
+      sellerId: sellerId ?? null,
       status: 'available',
       createdAt: new Date(),
     };
@@ -150,6 +151,68 @@ export class SellersService {
     return { message: 'Pet deleted successfully' };
   }
 
+  createPetForSeller(sellerId: number, createPetDto: CreatePetDto) {
+    const seller = this.sellers.find((s) => s.id === sellerId);
+    if (!seller) {
+      throw new HttpException('Seller not found', HttpStatus.NOT_FOUND);
+    }
+
+    const newPet = {
+      id: this.pets.length + 1,
+      ...createPetDto,
+      sellerId,
+      status: 'available',
+      createdAt: new Date(),
+    };
+    this.pets.push(newPet);
+    return { message: 'Pet created for seller', pet: newPet };
+  }
+
+  getSellerPets(sellerId: number) {
+    return this.pets.filter((p) => p.sellerId === sellerId);
+  }
+
+  deleteSellerPet(sellerId: number, petId: number) {
+    const index = this.pets.findIndex((p) => p.id === petId && p.sellerId === sellerId);
+    if (index === -1) {
+      throw new HttpException('Seller pet not found', HttpStatus.NOT_FOUND);
+    }
+    this.pets.splice(index, 1);
+    return { message: 'Seller pet deleted successfully' };
+  }
+
+  getSellerApplications(sellerId: number) {
+    return this.applications.filter((a) => a.sellerId === sellerId);
+  }
+
+  deleteSellerApplication(sellerId: number, appId: number) {
+    const index = this.applications.findIndex((a) => a.id === appId && a.sellerId === sellerId);
+    if (index === -1) {
+      throw new HttpException('Seller application not found', HttpStatus.NOT_FOUND);
+    }
+    this.applications.splice(index, 1);
+    return { message: 'Seller application deleted successfully' };
+  }
+
+  createApplicationForPet(sellerId: number, petId: number, body: any) {
+    const pet = this.pets.find((p) => p.id === petId && p.sellerId === sellerId);
+    if (!pet) {
+      throw new HttpException('Pet not found for seller', HttpStatus.NOT_FOUND);
+    }
+
+    const newApplication = {
+      id: this.applications.length + 1,
+      sellerId,
+      petId,
+      message: body.message || '',
+      status: 'PENDING',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.applications.push(newApplication);
+    return { message: 'Application created successfully', application: newApplication };
+  }
+
   viewApplications(query: { page?: number; limit?: number }) {
     const page = query.page || 1;
     const limit = query.limit || 10;
@@ -163,7 +226,7 @@ export class SellersService {
     };
   }
 
-  updateApplicationStatus(
+  async updateApplicationStatus(
     applicationId: number,
     updateApplicationStatusDto: UpdateApplicationStatusDto,
   ) {
@@ -176,7 +239,7 @@ export class SellersService {
     application.updatedAt = new Date();
 
     // Send notification email to seller
-    const seller = this.sellers.find(s => s.id === application.sellerId); // Assuming application has sellerId
+    const seller = this.sellers.find((s) => s.id === application.sellerId);
     if (seller) {
       try {
         await this.mailerService.sendMail({

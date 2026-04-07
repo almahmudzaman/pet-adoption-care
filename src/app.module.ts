@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AdoptersModule } from './adopters/adopters.module';
-import { VetsModule } from './vets/vets.module';
+// import { VetsModule } from './vets/vets.module';
 import { SellersModule } from './sellers/sellers.module';
 import { AdminModule } from './admin/admin.module';
 
@@ -28,7 +28,7 @@ import { Favorite } from './common/entities/favorite.entity';
 
     // Your Adopter Module
     AdoptersModule,
-    VetsModule,
+    // VetsModule,
     SellersModule,
     AdminModule,
 

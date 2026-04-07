@@ -12,35 +12,35 @@ export class CreatePetDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @Type(() => Number)
   @IsNumber()
   @Min(0)
-  age: number;
+  age!: number;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  species: string;
+  species!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
-  breed: string;
+  breed!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(20)
-  gender: string;
+  gender!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
-  description: string;
+  description!: string;
 
   @Type(() => Number)
   @IsNumber()
   @IsPositive()
-  adoptionFee: number;
+  adoptionFee!: number;
 }
